@@ -120,7 +120,7 @@ function render() {
         h('p', null, h('button', { class: 'primary', disabled: !ready(), onclick: reconcile }, 'Reconcile'), ' ',
           h('span', { class: 'mute' }, 'Files are read in this browser and are not uploaded. Records are joined on work email.')),
         codesOn()
-          ? h('p', { class: 'mute' }, `${plural(CODES.list.length, 'MLO job code')}, ${CODES_FROM[CODES.from]}. ADP rows with another code and nothing matching in the NMLS extract (email or NMLS ID) are set aside. `, h('button', { class: 'link', onclick: () => show({ type: 'codes' }) }, 'Change'))
+          ? h('p', { class: 'mute' }, `${plural(CODES.list.length, 'MLO job code')}, ${CODES_FROM[CODES.from]}. ADP rows with another code, no NMLS ID and no matching email are set aside. `, h('button', { class: 'link', onclick: () => show({ type: 'codes' }) }, 'Change'))
           : h('p', { class: 'warn' }, 'No MLO job code list: every ADP row is treated as an originator. ', h('button', { class: 'link', onclick: () => show({ type: 'codes' }) }, 'Set the list'))),
       result && h('section', { class: 'card' },
         h('h2', null, `Result · ${stamp(ran)}`),
@@ -146,7 +146,7 @@ function render() {
 const cats = () => SA.CATEGORIES.filter(c => c !== SA.SET_ASIDE || (result && result.codes));
 const SCOPE = {
   on: { label: 'On the MLO list', rows: () => result.filter(r => r.adp && !r.offList) },
-  joined: { label: 'Not on the list, found in the NMLS extract', rows: () => result.filter(r => r.adp && r.offList && r.category !== SA.SET_ASIDE) },
+  joined: { label: 'Not on the list, listed for review', rows: () => result.filter(r => r.adp && r.offList && r.category !== SA.SET_ASIDE) },
   aside: { label: 'Not on the list, set aside', rows: () => inCat(SA.SET_ASIDE) },
 };
 const adpRowsRead = () => SRC.adp.files.reduce((n, f) => n + f.parsed.rows.length, 0);
@@ -239,7 +239,7 @@ VIEWS.codes = fr => {
   };
   const n = split(fr.text).length;
   return { title: 'MLO job codes', body: [
-    h('p', { class: 'mute' }, 'The ADP job codes of mortgage loan originators. An ADP row with another code is still listed and flagged when the NMLS extract has its work email or its NMLS ID; with neither, it is set aside.'),
+    h('p', { class: 'mute' }, 'The ADP job codes of mortgage loan originators. An ADP row with another code is still listed and flagged when it has an NMLS ID or the NMLS extract has its work email; with neither, it is set aside.'),
     h('p', null, h('label', { class: 'mute' }, 'Load from a CSV: '), h('input', { type: 'file', accept: '.csv,.txt,text/csv', 'aria-label': 'Load MLO job codes from a CSV', onchange: e => load(e).catch(err => toast(err.message)) })),
     fr.csv && fr.csv.parsed.headers.length > 1 && h('p', null, h('label', { class: 'mute' }, 'Column with the codes: '),
       h('select', { 'aria-label': 'Column with the codes', onchange: e => { fr.col = +e.target.value; fromColumn(); renderPop(); } },

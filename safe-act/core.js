@@ -106,8 +106,9 @@ const SafeAct = (() => {
     const mlo = codes ? new Set([...codes].map(stdCode).filter(Boolean)) : null;
     const offList = a => !!(mlo && a && !mlo.has(stdCode(a.jobCode)));
     const codeNote = a => (offList(a) ? (stdCode(a.jobCode) ? `Job code ${a.jobCode} is not on the MLO list.` : 'No job code in the ADP report.') : '');
-    // Set aside only when nothing in the NMLS extract matches: not the email, and not the NMLS ID under another email.
-    const inNmls = a => { const id = stdId(a.nmlsId); return !!(id && nById.get(id)); };
+    // Set aside only an off-list row with no NMLS ID at all and no matching email. A row that carries an NMLS ID is
+    // listed for review even when that ID is not in the extract (owner's decision, 17 Nov 2026).
+    const hasId = a => !!stdId(a.nmlsId);
     const aside = (a, note) => out.push({ category: SET_ASIDE, email: stdEmail(a.email), nmls: null, adp: a, diffs: [], compare: [], note, offList: true });
     const out = [], index = rows => { const m = new Map(); for (const r of rows) { const k = stdEmail(r.email); if (!m.has(k)) m.set(k, []); m.get(k).push(r); } return m; };
     const N = index(nmls), A = index(adp);
@@ -118,13 +119,13 @@ const SafeAct = (() => {
       const ns = N.get(key) || [], as = A.get(key) || [];
       if (!key) {
         ns.forEach(n => unjoin(n, null, 'No work email in the NMLS extract.'));
-        as.forEach(a => (offList(a) && !inNmls(a) ? aside(a, 'No work email in the ADP report. ' + codeNote(a)) : unjoin(null, a, 'No work email in the ADP report.')));
+        as.forEach(a => (offList(a) && !hasId(a) ? aside(a, 'No work email in the ADP report. ' + codeNote(a)) : unjoin(null, a, 'No work email in the ADP report.')));
         continue;
       }
       if (ns.length > 1 || as.length > 1) {
         const note = `Work email appears ${ns.length} time(s) in the NMLS extract and ${as.length} time(s) in the ADP report.`;
         ns.forEach(n => unjoin(n, null, note));
-        as.forEach(a => (!ns.length && offList(a) && !inNmls(a) ? aside(a, note + ' ' + codeNote(a)) : unjoin(null, a, note)));
+        as.forEach(a => (!ns.length && offList(a) && !hasId(a) ? aside(a, note + ' ' + codeNote(a)) : unjoin(null, a, note)));
         continue;
       }
       const n = ns[0] || null, a = as[0] || null;
@@ -136,8 +137,9 @@ const SafeAct = (() => {
         const id = stdId((n || a).nmlsId), other = id && (n ? aById : nById).get(id);
         const note = other ? `The same NMLS ID is in the ${n ? 'ADP report' : 'NMLS extract'} under ${other.email || 'no work email'}.`
           : a && !id ? 'No NMLS ID in the ADP report.' : '';
-        if (!n && offList(a) && !other) { aside(a, [codeNote(a), note, id ? `Its NMLS ID ${a.nmlsId} is not in the NMLS extract.` : ''].filter(Boolean).join(' ')); continue; }
-        out.push({ category: n ? 'NMLS only' : 'ADP only', email: key, nmls: n, adp: a, diffs: [], compare: [], note: [note, codeNote(a)].filter(Boolean).join(' '), offList: offList(a) });
+        if (!n && offList(a) && !id) { aside(a, [codeNote(a), note].filter(Boolean).join(' ')); continue; }
+        const missingId = !n && id && !other ? `Its NMLS ID ${a.nmlsId} is not in the NMLS extract.` : '';
+        out.push({ category: n ? 'NMLS only' : 'ADP only', email: key, nmls: n, adp: a, diffs: [], compare: [], note: [note, codeNote(a), offList(a) ? missingId : ''].filter(Boolean).join(' '), offList: offList(a) });
       }
     }
     const order = r => CATEGORIES.indexOf(r.category);
