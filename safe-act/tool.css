@@ -1,0 +1,13 @@
+section.card { border-top: 1px solid var(--fg); padding: 10px 0 18px; }
+section.card > h2 { font-size: 13px; font-weight: 600; margin: 0 0 8px; }
+.files { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px 32px; }
+.files h3 { font-size: 13px; font-weight: 600; margin: 0 0 4px; }
+.map { display: grid; grid-template-columns: 150px 1fr; gap: 4px 8px; align-items: center; margin-top: 8px; }
+.map label { color: var(--mute); } .map select { width: 100%; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px 40px; }
+.cols table { width: 100%; }
+td.wrap { word-break: break-word; }
+dialog { width: min(900px, 96vw); }
+@media print { section.card:first-of-type { display: none; } }
+.facts .id { white-space: normal; word-break: break-all; }
+.side-h { margin: 4px 0 6px; word-break: break-word; }
