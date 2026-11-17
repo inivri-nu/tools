@@ -1,0 +1,11 @@
+# macOS System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear on external volumes or USB drives
+.Spotlight-V100
+.Trashes
